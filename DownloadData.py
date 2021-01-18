@@ -1,15 +1,9 @@
-import pandas as pd
-import pytz
 from zeep import Client
 import csv
-
-#root = Path(__file__).parents[1]
 
 client = Client("https://tools.rki.de/SurvStat/SurvStatWebService.svc?wsdl")
 
 factory = client.type_factory("ns2")
-
-service = client.service.GetOlapData.__dict__
 
 
 def fetch():
@@ -36,7 +30,7 @@ def fetch():
                 ]
             ),
             "RowHierarchy": "[ReportingDate].[YearWeek]",
-            "ColumnHierarchy": "[AlterPerson80].[AgeGroupName8]",
+            "ColumnHierarchy": "[AlterPerson80].[AgeGroupName6]",
             #AgeGroupName6 : 0,05,10,...,70,75,80+
             #AgeGroupName8 : 0,1,2,3,...,78,79,80+
         }
@@ -67,24 +61,21 @@ def formatAgeGroup(AgeGroup):
 
 def saveCSV():
     AgeGroups, YearWeek, Data = fetch()
-    Data = [ata[1:] for ata in Data] # Remove Total over time
-    Data = Data[1:] # Remove Total over Age Groups
-    print(AgeGroups, YearWeek)
-    AgeGroups = AgeGroups[1:]
+    Data = Data[1:] # Remove Total over time
+    # Data = Data[1:] # Remove Total over Age Groups
+    # AgeGroups = AgeGroups[1:]
     YearWeek = YearWeek[1:]
-
-    print(AgeGroups,YearWeek)
 
     new_Age = formatAgeGroup(AgeGroups)
     YearWeek.insert(0,'Altergruppe')
     new_Data = list(zip(*Data[::1]))
     new_Data = [list(i) for i in new_Data]
-    print(new_Data)
+    #print(new_Data)
     for i in range(len(new_Data)):
         new_Data[i].insert(0, new_Age[i])
-    print(new_Data)
+    #print(new_Data)
     #print(list(zip(Data)))
-    with open('test.csv', 'wt', newline ='') as file:
+    with open('currentData.csv', 'wt', newline ='') as file:
         writer = csv.writer(file, delimiter=';')
         writer.writerow(i for i in YearWeek)
         #writer.writerow(i for i in YearWeek)

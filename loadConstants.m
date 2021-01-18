@@ -4,11 +4,14 @@
 % -------------------------------------------------------------------
 
 
+if ~exist('Incidence','var')
+    Incidence = false;
+end
+if ~exist('Difference','var')
+    Difference = false;
+end
 
-Incidence = false;
-Difference = false;
-
-
+warning('off','MATLAB:table:ModifiedVarnames')
 
 % Loads Weekly Corona Data
 tab = readtable('currentData.csv','ReadRowNames',1,'ReadVariableNames',1,'HeaderLines',0);

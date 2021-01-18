@@ -43,7 +43,7 @@ for i =1:length(Age)
     end
 end
 
-xlabel('Datum')
+%xlabel('Datum')
 if Difference
     delta = '$$\Delta$$ ';
 else

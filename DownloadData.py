@@ -58,18 +58,23 @@ def formatAgeGroup(AgeGroup):
         return '80+'
     return AgeGroup
 
-
-def saveCSV():
+def clean_fetch():
     AgeGroups, YearWeek, Data = fetch()
-    Data = Data[1:] # Remove Total over time
+    Data = Data[1:]  # Remove Total over time
     # Data = Data[1:] # Remove Total over Age Groups
     # AgeGroups = AgeGroups[1:]
     YearWeek = YearWeek[1:]
 
     new_Age = formatAgeGroup(AgeGroups)
-    YearWeek.insert(0,'Altergruppe')
+    #YearWeek.insert(0, 'Altergruppe')
     new_Data = list(zip(*Data[::1]))
     new_Data = [list(i) for i in new_Data]
+
+    return new_Age, YearWeek, new_Data
+
+def saveCSV():
+    new_Age, YearWeek, new_Data = clean_fetch()
+    YearWeek.insert(0,'Altergruppe')
     #print(new_Data)
     for i in range(len(new_Data)):
         new_Data[i].insert(0, new_Age[i])

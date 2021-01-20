@@ -91,7 +91,6 @@ for i in range(len(age)):
     ))
     p1.line(x="x", y="y", line_color=tuple(cmap_colors[:,i]), line_width=1, line_alpha=1,legend_label=age[i],source=source)
 
-
 p1.legend.location = "top_left"
 p1.legend.click_policy = "mute"
 p1.legend.orientation = "horizontal"

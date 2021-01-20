@@ -9,9 +9,9 @@ from bokeh.models import ColumnDataSource, Grid, Line, LinearAxis, Plot
 
 age, year_week, data = DownloadData.clean_fetch()
 np_data = np.array(data)
-#print(data)
+
 np_data[np_data==None]=0
-#print(np_data)
+
 data = np_data
 
 np.savetxt('age.txt',age,fmt="%s")
@@ -23,9 +23,6 @@ age = np.genfromtxt('age.txt',dtype='str')
 year_week = np.genfromtxt('year_week.txt',dtype='str')
 data = np.loadtxt('data.txt')
 
-#print(age)
-#print(year_week)
-#print(data)
 
 
 def yw2datetime(yw):

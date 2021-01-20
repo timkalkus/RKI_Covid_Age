@@ -19,7 +19,6 @@ np.savetxt('year_week.txt',year_week,fmt="%s")
 np.savetxt('data.txt',np_data,fmt="%s")
 
 
-
 age = np.genfromtxt('age.txt',dtype='str')
 year_week = np.genfromtxt('year_week.txt',dtype='str')
 data = np.loadtxt('data.txt')

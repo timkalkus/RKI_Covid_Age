@@ -82,8 +82,7 @@ cmap_colors[2] = np.interp(np.linspace(0,1,len(age)),np.linspace(0,1,4),np.array
 
 cmap_colors = cmap_colors.astype(np.uint8)
 
-# add a line renderer with legend and line thickness
-#p1.line(x, y, legend_label="Temp.", line_width=2)
+
 for i in range(len(age)):
     source = ColumnDataSource(data=dict(
         x=list(yw2datetime(year_week)),
@@ -91,9 +90,7 @@ for i in range(len(age)):
         desc=[age[i] for x in range(len(year_week))],
     ))
     p1.line(x="x", y="y", line_color=tuple(cmap_colors[:,i]), line_width=1, line_alpha=1,legend_label=age[i],source=source)
-    #p1.add_glyph(source, glyph,name=age[i])
 
-    #p1.line(x=yw2datetime(year_week), y=data[i][:],line_color=tuple(cmap_colors[:,i]),legend_label=age[i],source=source)
 
 p1.legend.location = "top_left"
 p1.legend.click_policy = "mute"

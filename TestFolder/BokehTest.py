@@ -7,8 +7,6 @@ import datetime
 import numpy as np
 from bokeh.models import ColumnDataSource, Grid, Line, LinearAxis, Plot
 
-
-
 age, year_week, data = DownloadData.clean_fetch()
 np_data = np.array(data)
 #print(data)

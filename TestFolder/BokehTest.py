@@ -8,10 +8,10 @@ import numpy as np
 import bokeh.models
 from bokeh.models import ColumnDataSource, Grid, Line, LinearAxis, Plot
 from bokeh.models.markers import marker_types
-"""
+
 import DownloadData
 
-age, year_week, data = DownloadData.clean_fetch()
+age, year_week, data = DownloadData.incidence()
 np_data = np.array(data)
 
 np_data[np_data == None] = 0
@@ -21,7 +21,7 @@ data = np_data
 np.savetxt('age.txt',age,fmt="%s")
 np.savetxt('year_week.txt',year_week,fmt="%s")
 np.savetxt('data.txt',np_data,fmt="%s")
-"""
+
 
 age = np.genfromtxt('age.txt', dtype='str')
 year_week = np.genfromtxt('year_week.txt', dtype='str')
@@ -59,9 +59,11 @@ hover_tool = HoverTool(
     mode='vline'
 )
 
-p1 = figure(title="simple line example", x_axis_type='datetime', x_axis_label='x', y_axis_label='y',
+p1 = figure(title="Inzidenz nach Altersgruppen", x_axis_type='datetime', x_axis_label='Datum', y_axis_label='Inzidenz',
             tools='pan,wheel_zoom,box_zoom,reset')
 p1.sizing_mode = "stretch_both"
+label = bokeh.models.Label(x=3,y=3,x_units='screen',y_units='screen',text='Some Stuff')
+p1.add_layout(label)
 p1.xaxis[0].formatter = bokeh.models.DatetimeTickFormatter() # PrintfTickFormatter(format="%d.%m.%Y")
 # hover = p1.select(dict(type=HoverTool))
 p1.add_tools(HoverTool(
@@ -102,17 +104,23 @@ marker_selector = [0, 1, 6, 8, 14, 15, 16, 12, 21, 24, 25, 0, 1, 6, 8, 14, 15, 1
 
 
 for i in range(len(age)):
-    line_color = tuple(cmap_colors[:, i])
+    if age[i]=='Gesamt':
+        line_color = (0,0,0)
+        line_width = 2
+    else:
+        line_color = tuple(cmap_colors[:, i])
+        line_width = 1
+    muted_alpha = .1
     source = ColumnDataSource(data=dict(
         x_list=list(yw2datetime(year_week)),
         y_list=list(data[i][:]),
         desc=[age[i] for x in range(len(year_week))],
         col=[line_color for x in year_week]
     ))
-    li = p1.line(x="x_list", y="y_list", line_color=line_color, line_width=1, line_alpha=1, source=source)
+    li = p1.line(x="x_list", y="y_list", line_color=line_color, line_width=line_width, line_alpha=1, source=source, muted_alpha=muted_alpha)
     #gly = bokeh.models.X(x="x", y="y", size=10, line_color=line_color, line_width=2, fill_color=None)
     #gly_p1 = p1.add_glyph(source, gly)
-    sca = p1.scatter(x="x_list", y="y_list", source=source)
+    sca = p1.scatter(x="x_list", y="y_list", source=source,muted_alpha=muted_alpha)
     #sca.glyph.marker=marker_list[i]
     #legend_list.append((age[i], [li]))
     sca.glyph.marker = marker_list[marker_selector[i]]
@@ -129,7 +137,7 @@ p2 = figure(title="simple line example", x_axis_label='x', y_axis_label='y', x_r
 p2.line(yw2datetime(year_week), data[i][:], legend_label='None')
 p2.sizing_mode = "stretch_both"
 # p1.multi_line(yw2datetime(year_week[:]),np.transpose(data, (2, 3, 0, 1)))
-column = bokeh.layouts.column([p1, p2])
+column = bokeh.layouts.column([p1])#, p2])
 column.sizing_mode = "stretch_both"
 
 # show the results

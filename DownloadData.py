@@ -132,7 +132,7 @@ def yw2datetime(yw):
         return datetime.datetime(yw_int[0] - 1, 12, 31 + date_diff) + datetime.timedelta(weeks=yw_int[1] - 1, days=6)
 
 
-def extrapolateLastWeek(YearWeek, Data):
+def extrapolateLastWeek(YearWeek, Data, collect_data=False):
     week_diff = (yw2datetime(YearWeek[-1]) + datetime.timedelta(
         hours=24) - datetime.datetime.now()) / datetime.timedelta(weeks=1)
 
@@ -142,8 +142,15 @@ def extrapolateLastWeek(YearWeek, Data):
             # the distribution is based on the reportet cases per weekday in germany from 22.01.2020 to 23.01.2021
             return value / np.interp(1 - w_diff, np.linspace(0, 1, len(distr)), distr)
 
+        if collect_data:
+            f = open('extrapolated_data.txt', 'a+')
+            f.write(datetime.datetime.now().strftime('%Y.%m.%d-%H:%M') + ' {:.4f} '.format(week_diff))
+            f.write(" ".join(np.char.mod('%d', Data[:, -1])) + ' ')
         for i in range(len(Data)):
             Data[i][-1] = extrap_function(Data[i][-1], week_diff)
+        if collect_data:
+            f.write(" ".join(np.char.mod('%d', Data[:, -1])) + '\n')
+            f.close()
         return Data, True
     return Data, False
 

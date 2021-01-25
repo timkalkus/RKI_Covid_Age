@@ -65,7 +65,12 @@ hover_tool = HoverTool(
 p1 = figure(title="Inzidenz nach Altersgruppen", x_axis_type='datetime', x_axis_label='Datum', y_axis_label='Inzidenz',
             tools='pan,wheel_zoom,box_zoom,reset')
 p1.sizing_mode = "stretch_both"
-label = bokeh.models.Label(x=3,y=3,x_units='screen',y_units='screen',text='Some Stuff')
+label = bokeh.models.Label(x=3,y=3,x_units='screen',y_units='screen',
+                           text='Stand: '+datetime.datetime.now().strftime("%d.%m.%Y %H:%M") +
+                                '; Quellen: Fallzahlen - Robert Koch-Institut: SurvStat@RKI 2.0, https://survstat.rki.de;' +
+                                ' Bevölkerung: https://www-genesis.destatis.de/ 12411-0005 31.12.2019',
+                           text_font_size='8pt')
+#
 p1.add_layout(label)
 p1.xaxis[0].formatter = bokeh.models.DatetimeTickFormatter() # PrintfTickFormatter(format="%d.%m.%Y")
 # hover = p1.select(dict(type=HoverTool))

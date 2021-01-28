@@ -44,29 +44,16 @@ def getmarker():
                        15, 16, 12, 21, 24, 25, 0, 1, 6, 8, 14, 15, 16, 12, 21, 24, 25]
     return marker_list, marker_selector
 
+def remove_none(item):
+    item = np.array(item)
+    item[item==None] = 0
+    return item
 
-def __init__():
-    age, year_week, data = DownloadData.incidence()
-    np_data = np.array(data)
-    np_data[np_data == None] = 0
-    data = np_data
-
-    data, interp = DownloadData.extrapolateLastWeek(year_week, data, collect_data=True)
-    output_file("lines.html")
-
-    p1 = figure(title="Inzidenz nach Altersgruppen", x_axis_type='datetime', x_axis_label='Datum',
-                y_axis_label='Inzidenz',
-                tools='pan,wheel_zoom,box_zoom,reset')
-    p1.sizing_mode = "stretch_both"
-    label = bokeh.models.Label(x=3, y=3, x_units='screen', y_units='screen',
-                               text='Stand: ' + datetime.datetime.now().strftime("%d.%m.%Y %H:%M") +
-                                    '; Quellen: Fallzahlen - Robert Koch-Institut: SurvStat@RKI 2.0, https://survstat.rki.de;' +
-                                    ' Bevölkerung: https://www-genesis.destatis.de/ 12411-0005 31.12.2019',
-                               text_font_size='8pt')
-    #
-    p1.add_layout(label)
-    p1.xaxis[0].formatter = bokeh.models.DatetimeTickFormatter()  # PrintfTickFormatter(format="%d.%m.%Y")
-
+def plot_data(p,age,year_week,data,collect_data=False):
+    data = remove_none(data)
+    data, interp = DownloadData.extrapolateLastWeek(year_week, data, collect_data=collect_data)
+    p.sizing_mode = "stretch_both"
+    p.xaxis[0].formatter = bokeh.models.DatetimeTickFormatter()  # PrintfTickFormatter(format="%d.%m.%Y")
     cmap_colors = get_cmap(len(age))
 
     marker_list, marker_selector = getmarker()
@@ -88,22 +75,22 @@ def __init__():
             col=[line_color for x in year_week]
         ))
         if interp:
-            li = p1.line(source.data['x_list'][:-1], source.data['y_list'][:-1], line_color=line_color,
+            li = p.line(source.data['x_list'][:-1], source.data['y_list'][:-1], line_color=line_color,
                          line_width=line_width,
                          line_alpha=1, muted_alpha=muted_alpha, legend_label=age[i])
-            li2 = p1.line(source.data['x_list'][-2:], source.data['y_list'][-2:], line_color=line_color,
+            li2 = p.line(source.data['x_list'][-2:], source.data['y_list'][-2:], line_color=line_color,
                           line_width=line_width,
                           line_alpha=1, muted_alpha=muted_alpha, legend_label=age[i], line_dash=[3, 3])
         else:
-            li = p1.line(source.data['x_list'], source.data['y_list'], line_color=line_color, line_width=line_width,
+            li = p.line(source.data['x_list'], source.data['y_list'], line_color=line_color, line_width=line_width,
                          line_alpha=1, muted_alpha=muted_alpha, legend_label=age[i])
-        sca = p1.scatter(x="x_list", y="y_list", source=source, muted_alpha=muted_alpha, legend_label=age[i])
+        sca = p.scatter(x="x_list", y="y_list", source=source, muted_alpha=muted_alpha, legend_label=age[i])
         sca.glyph.marker = marker_list[marker_selector[i]]
         sca.glyph.line_color = line_color
         sca.glyph.fill_color = None
         sca.glyph.size = 8
         glyph_list.append(sca)
-    p1.add_tools(HoverTool(
+    p.add_tools(HoverTool(
         renderers=glyph_list,
         tooltips=[
             ("Alter", "@desc"),
@@ -113,10 +100,58 @@ def __init__():
         formatters={'@x_list': 'datetime', },
     ))
 
-    p1.legend.location = "top_left"
-    p1.legend.click_policy = "mute"
-    p1.legend.orientation = "horizontal"
-    column = bokeh.layouts.column([p1])
+    p.legend.location = "top_left"
+    p.legend.click_policy = "mute"
+    p.legend.orientation = "horizontal"
+    return p
+
+def x_bounds(year_week):
+    yw_dat = yw2datetime(year_week)
+    return [yw_dat[0]-datetime.timedelta(weeks=1), yw_dat[-1]+datetime.timedelta(weeks=1)]
+
+def __init__():
+    age, year_week, data, abs_data = DownloadData.incidence(True)
+
+    x_bound = x_bounds(year_week)
+
+    output_file("lines.html")
+
+    p1 = figure(title="Inzidenz nach Altersgruppen", x_axis_type='datetime', x_axis_label='Datum',
+                y_axis_label='Inzidenz',
+                tools='pan,wheel_zoom,box_zoom,reset')
+    p2 = figure(title="Fallzahlen nach Altersgruppen", x_axis_type='datetime', x_axis_label='Datum',
+                y_axis_label='Fallzahl',
+                tools='pan,wheel_zoom,box_zoom,reset')
+    p1 = plot_data(p1, age, year_week, data, collect_data=True)
+    p2 = plot_data(p2, age, year_week, abs_data)
+    p1.x_range=bokeh.models.Range1d(x_bound[0],x_bound[1])
+    p2.x_range=p1.x_range
+
+    date_range_slider = bokeh.models.DateRangeSlider(value=(x_bound[0],x_bound[1]),
+                                        start=x_bound[0], end=x_bound[1])
+    def update_xrange(p):
+        return bokeh.models.CustomJS(args=dict(p=p), code="""
+                var a = cb_obj.value;
+                p.x_range.start = a[0];
+                p.x_range.end = a[1];
+            """)
+
+
+
+    date_range_slider.js_on_change('value', update_xrange(p1))
+    #date_range_slider.js_on_change('value', update_xrange(p2))
+
+    tab1 = bokeh.models.Panel(child=p1, title="Inzidenz")
+    tab2 = bokeh.models.Panel(child=p2, title="Fallzahl")
+
+
+    sub_text = bokeh.models.Div(text='<p style="font-size:10px">Stand: ' + datetime.datetime.now().strftime("%d.%m.%Y %H:%M") +
+                                     '; Quellen: <a href="https://survstat.rki.de">Fallzahlen - Robert Koch-Institut: SurvStat@RKI 2.0</a>;' +
+                                     ' <a href="https://www-genesis.destatis.de/genesis//online?operation=table&code=12411-0005&bypass=true&'
+                                     'levelindex=0&levelid=1611832679336">Bevölkerung - Statistisches Bundesamt (Destatis), 12411-0005 31.12.2019</a><br>'
+                                     '<a href="https://github.com/timkalkus/RKI_Covid_Age">Github-Seite</a> des Tools</p>')
+
+    column = bokeh.layouts.column([bokeh.models.Tabs(tabs=[tab1, tab2]),date_range_slider, sub_text])
     column.sizing_mode = "stretch_both"
     show(column)
 

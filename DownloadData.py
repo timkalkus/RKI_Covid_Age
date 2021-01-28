@@ -76,12 +76,15 @@ def clean_fetch(remove_unknown=True):
     return new_Age, YearWeek, new_Data
 
 
-def incidence():
+def incidence(absolute_numbers=False):
     AgeGroups, YearWeek, Data = clean_fetch()
     age_num = count_age(AgeGroups)
+    new_Data = np.zeros(np.shape(Data))
     for i in range(len(age_num)):
-        Data[i] = Data[i] / age_num[i] * 100000
-    return AgeGroups, YearWeek, Data
+        new_Data[i] = Data[i] / age_num[i] * 100000
+    if absolute_numbers:
+        return AgeGroups, YearWeek, new_Data, Data
+    return AgeGroups, YearWeek, new_Data
 
 
 def count_age(age_bracket):

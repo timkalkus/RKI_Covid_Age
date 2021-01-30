@@ -49,7 +49,7 @@ def remove_none(item):
     item[item==None] = 0
     return item
 
-def plot_data(p,age,year_week,data,collect_data=False):
+def plot_data(p,age,year_week,data,collect_data=False,incidence=True):
     data = remove_none(data)
     data, interp = DownloadData.extrapolateLastWeek(year_week, data, collect_data=collect_data)
     p.sizing_mode = "stretch_both"
@@ -64,16 +64,24 @@ def plot_data(p,age,year_week,data,collect_data=False):
         if age[i] == 'Gesamt':
             line_color = (0, 0, 0)
             line_width = 2
+            time, count = DownloadData.get_total(incidence=incidence)
+            source = ColumnDataSource(data=dict(
+                x_list=time,
+                y_list=list(count),
+                desc=[age[i] for x in time],
+                col=[line_color for x in time]
+            ))
         else:
             line_color = tuple(cmap_colors[:, i])
             line_width = 1
+            source = ColumnDataSource(data=dict(
+                x_list=list(yw2datetime(year_week)),
+                y_list=list(data[i][:]),
+                desc=[age[i] for x in year_week],
+                col=[line_color for x in year_week]
+            ))
         muted_alpha = .1
-        source = ColumnDataSource(data=dict(
-            x_list=list(yw2datetime(year_week)),
-            y_list=list(data[i][:]),
-            desc=[age[i] for x in range(len(year_week))],
-            col=[line_color for x in year_week]
-        ))
+
         if interp:
             li = p.line(source.data['x_list'][:-1], source.data['y_list'][:-1], line_color=line_color,
                          line_width=line_width,
@@ -90,6 +98,10 @@ def plot_data(p,age,year_week,data,collect_data=False):
         sca.glyph.fill_color = None
         sca.glyph.size = 8
         glyph_list.append(sca)
+    if incidence:
+        incidence_cases = "Inzidenz"
+    else:
+        incidence_cases = "Fallzahlen"
     p.add_tools(HoverTool(
         renderers=glyph_list,
         tooltips=[
@@ -122,8 +134,8 @@ def __init__():
     p2 = figure(title="Fallzahlen nach Altersgruppen", x_axis_type='datetime', x_axis_label='Datum',
                 y_axis_label='Fallzahl',
                 tools='pan,wheel_zoom,box_zoom,reset')
-    p1 = plot_data(p1, age, year_week, data, collect_data=True)
-    p2 = plot_data(p2, age, year_week, abs_data)
+    p1 = plot_data(p1, age, year_week, data, collect_data=True, incidence=True)
+    p2 = plot_data(p2, age, year_week, abs_data, incidence=False)
     p1.x_range=bokeh.models.Range1d(x_bound[0],x_bound[1])
     p2.x_range=p1.x_range
 

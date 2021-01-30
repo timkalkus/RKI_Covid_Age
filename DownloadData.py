@@ -1,5 +1,5 @@
 from zeep import Client
-import datetime, csv, re
+import datetime, csv, re, pickle, os, json, urllib, time
 import numpy as np
 
 
@@ -156,6 +156,100 @@ def extrapolateLastWeek(YearWeek, Data, collect_data=False):
             f.close()
         return Data, True
     return Data, False
+
+def save_obj(obj, name ):
+    with open('obj/'+ name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+def load_obj(name ):
+    with open('obj/' + name + '.pkl', 'rb') as f:
+        return pickle.load(f)
+
+
+def get_total(incidence=True):
+    def countData(dicti, date, value, count):
+        date = str(date)
+        value = str(value)
+
+        def add2dict_dict(dicti, value):
+            if value not in dicti:
+                dicti[value] = dict()
+            # return dicti
+
+        def add2dict(dicti, value, count):
+            if value not in dicti:
+                dicti[value] = count
+            else:
+                dicti[value] += count
+            # return dicti
+
+        add2dict_dict(dicti, date)
+        add2dict(dicti[date], value, count)
+        # return dicti
+
+    def get_cases(dicti, date):
+        plus = minus = null = 0
+        try:
+            minus = -dicti[date]['-1']
+        except:
+            None
+        try:
+            plus = dicti[date]['1']
+        except:
+            None
+        try:
+            null = dicti[date]['0']
+        except:
+            None
+        return null, plus, minus
+
+    def download_raw_data():
+        time_case_dict = dict()
+        time_death_dict = dict()
+        notFinished = True
+        offset = 0  # 1000000
+
+        while notFinished:
+            with urllib.request.urlopen(
+                    "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/"
+                    "FeatureServer/0/query?where=1%3D1&outFields=Meldedatum,Refdatum,AnzahlFall,AnzahlTodesfall,NeuerFall,NeuerTodesfall&"
+                    "outSR=4326&" + "resultOffset={:}".format(offset) + "&f=json") as url:
+                data = json.loads(url.read().decode())
+                if 'exceededTransferLimit' not in data:
+                    notFinished = False
+                offset = offset + len(data['features'])
+                print(offset)
+                # if offset > 10000:
+                #    notFinished = False
+                for it in data['features']:  # alternativ statt Meldedatum: Refdatum
+                    countData(time_case_dict, int(it['attributes']['Meldedatum'] / 1000), it['attributes']['NeuerFall'],
+                              it['attributes']['AnzahlFall'])
+                    countData(time_death_dict, int(it['attributes']['Meldedatum'] / 1000),
+                              it['attributes']['NeuerTodesfall'], it['attributes']['AnzahlTodesfall'])
+        save_obj(time_case_dict, 'case')
+        save_obj(time_death_dict, 'death')
+    if not os.path.exists('obj'):
+        os.mkdir('obj')
+    if not os.path.isfile('obj/case.pkl'):
+        download_raw_data()
+    if time.time()-os.path.getmtime('obj/case.pkl')>3600:
+        download_raw_data()
+    time_case_dict = load_obj('case')
+    time_death_dict = load_obj('death')
+
+    time_array = np.array(list(time_case_dict.keys()), dtype=int)
+    time_array.sort()
+    case_list = np.zeros((3, len(time_array)))
+    death_list = np.zeros((3, len(time_array)))
+    time_list = []
+    for i, item in enumerate(time_array):
+        case_list[0, i], case_list[1, i], case_list[-1, i] = get_cases(time_case_dict, str(item))
+        time_list.append(datetime.datetime.fromtimestamp(item))
+    if incidence:
+        factor = 1/count_age('Gesamt')*100000
+    else:
+        factor = 1
+    return time_list, np.convolve(case_list[0]+case_list[1]+case_list[-1], [1, 1, 1, 1, 1, 1, 1], 'same')*factor
 
 
 def saveCSV():

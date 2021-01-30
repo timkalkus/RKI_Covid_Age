@@ -54,7 +54,7 @@ def get_cases(dicti, date):
         None
     return null, plus, minus
 
-#"""
+"""
 time_case_dict = dict()
 time_death_dict = dict()
 notFinished = True

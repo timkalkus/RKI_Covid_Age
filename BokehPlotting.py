@@ -92,7 +92,10 @@ def plot_data(p,age,year_week,data,collect_data=False,incidence=True):
         else:
             li = p.line(source.data['x_list'], source.data['y_list'], line_color=line_color, line_width=line_width,
                          line_alpha=1, muted_alpha=muted_alpha, legend_label=age[i])
-        sca = p.scatter(x="x_list", y="y_list", source=source, muted_alpha=muted_alpha, legend_label=age[i])
+        if age[i] == 'Gesamt':
+            sca = p.scatter(x="x_list", y="y_list", source=source, alpha=0, muted_alpha=0, legend_label=age[i])
+        else:
+            sca = p.scatter(x="x_list", y="y_list", source=source, muted_alpha=muted_alpha, legend_label=age[i])
         sca.glyph.marker = marker_list[marker_selector[i]]
         sca.glyph.line_color = line_color
         sca.glyph.fill_color = None

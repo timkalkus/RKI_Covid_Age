@@ -8,7 +8,8 @@ import urllib.request
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
-import pickle
+import pickle, io
+import pandas as pd
 
 def save_obj(obj, name ):
     with open('obj/'+ name + '.pkl', 'wb') as f:
@@ -76,7 +77,7 @@ while notFinished:
             countData(time_death_dict, int(it['attributes']['Refdatum']/1000), it['attributes']['NeuerTodesfall'],it['attributes']['AnzahlTodesfall'])
 save_obj(time_case_dict, 'case')
 save_obj(time_death_dict, 'death')
-#"""
+
 time_case_dict = load_obj('case')
 time_death_dict = load_obj('death')
 
@@ -99,4 +100,15 @@ plt.legend()
 plt.show()
 
 print(time_list, time_death_dict)
-
+#"""
+with urllib.request.urlopen('https://impfdashboard.de/static/data/germany_vaccinations_timeseries_v2.tsv') as url:
+    c = pd.read_table(io.StringIO(url.read().decode()))
+    c.date = pd.to_datetime(c.date,format='%Y-%m-%d')
+    #print(c.date)
+    print(c.columns.values.tolist())
+    for col in ['dosen_kumulativ','dosen_differenz_zum_vortag', 'dosen_erst_differenz_zum_vortag', 'dosen_zweit_differenz_zum_vortag', 'personen_erst_kumulativ', 'personen_voll_kumulativ', 'impf_quote_erst', 'impf_quote_voll']:#c.columns.values.tolist():
+        if col=='date':
+            continue
+        plt.plot(c['date'], c[col], label=col)
+    plt.legend()
+    plt.show()

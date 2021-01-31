@@ -106,7 +106,7 @@ with urllib.request.urlopen('https://impfdashboard.de/static/data/germany_vaccin
     c.date = pd.to_datetime(c.date,format='%Y-%m-%d')
     #print(c.date)
     print(c.columns.values.tolist())
-    for col in ['dosen_kumulativ','dosen_differenz_zum_vortag', 'dosen_erst_differenz_zum_vortag', 'dosen_zweit_differenz_zum_vortag', 'personen_erst_kumulativ', 'personen_voll_kumulativ', 'impf_quote_erst', 'impf_quote_voll']:#c.columns.values.tolist():
+    for col in ['personen_erst_kumulativ', 'personen_voll_kumulativ']:#c.columns.values.tolist():
         if col=='date':
             continue
         plt.plot(c['date'], c[col], label=col)

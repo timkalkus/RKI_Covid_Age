@@ -1,6 +1,7 @@
 from zeep import Client
-import datetime, csv, re, pickle, os, json, urllib, time
+import datetime, csv, re, pickle, os, json, urllib, time, io
 import numpy as np
+import pandas as pd
 
 
 def formatAgeGroup(AgeGroup):
@@ -166,7 +167,7 @@ def load_obj(name ):
         return pickle.load(f)
 
 
-def get_total(incidence=True):
+def get_total(incidence=True,smooth=True):
     def countData(dicti, date, value, count):
         date = str(date)
         value = str(value)
@@ -245,12 +246,24 @@ def get_total(incidence=True):
     for i, item in enumerate(time_array):
         case_list[0, i], case_list[1, i], case_list[-1, i] = get_cases(time_case_dict, str(item))
         time_list.append(datetime.datetime.fromtimestamp(item))
+    time_list = to_datetime(time_list)
+    if not smooth:
+        return time_list, case_list[0]+case_list[1]#+case_list[-1])
     if incidence:
         factor = 1/count_age('Gesamt')*100000
     else:
         factor = 1
-    return time_list, np.convolve(case_list[0]+case_list[1]+case_list[-1], [1, 1, 1, 1, 1, 1, 1], 'same')*factor
+    return time_list, np.convolve(case_list[0]+case_list[1], [1, 1, 1, 1, 1, 1, 1], 'full')[:-6]*factor
 
+def to_datetime(dates):
+    return [datetime.datetime(*date.timetuple()[:3]) for date in dates]
+
+
+def get_vaccination_data():
+    with urllib.request.urlopen('https://impfdashboard.de/static/data/germany_vaccinations_timeseries_v2.tsv') as url:
+        c = pd.read_csv (io.StringIO(url.read().decode()),sep='\t')
+        c.date = pd.to_datetime(c.date, format='%Y-%m-%d')
+        return to_datetime(np.array(c['date'].array, dtype='M8[ms]').astype('O')), c['dosen_erst_differenz_zum_vortag'].array, c['dosen_zweit_differenz_zum_vortag'].array
 
 def saveCSV():
     new_Age, YearWeek, new_Data = clean_fetch()

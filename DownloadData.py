@@ -263,7 +263,7 @@ def get_vaccination_data():
     with urllib.request.urlopen('https://impfdashboard.de/static/data/germany_vaccinations_timeseries_v2.tsv') as url:
         c = pd.read_csv (io.StringIO(url.read().decode()),sep='\t')
         c.date = pd.to_datetime(c.date, format='%Y-%m-%d')
-        return to_datetime(np.array(c['date'].array, dtype='M8[ms]').astype('O')), c['dosen_erst_differenz_zum_vortag'].array, c['dosen_zweit_differenz_zum_vortag'].array
+        return to_datetime(np.array(c['date'].array, dtype='M8[ms]').astype('O')), c['dosen_erst_differenz_zum_vortag'].array-c['dosen_zweit_differenz_zum_vortag'].array, c['dosen_zweit_differenz_zum_vortag'].array
 
 def saveCSV():
     new_Age, YearWeek, new_Data = clean_fetch()

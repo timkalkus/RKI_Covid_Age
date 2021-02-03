@@ -163,7 +163,7 @@ def plot_sum(p):
     p.varea_stack(['vax_second', 'vax_first', 'infected'], x='x_list', source=source, legend_label=names,
                    color=[(50, 50, 200), (50, 200, 50), (200, 50, 50)])
     glyph = p.line(x='x_list', y='y_list', source=source, alpha=0)
-    five_percentile = np.floor(np.max(y_list[0]+y_list[1]+y_list[2])/(DownloadData.count_age('Gesamt')*0.05))
+    five_percentile = np.max([np.floor(np.max(y_list[0]+y_list[1]+y_list[2])/(DownloadData.count_age('Gesamt')*0.05)),1])
 
     p.line(x=[x[0], x[-1]], y=[DownloadData.count_age('Gesamt')*0.05*five_percentile, DownloadData.count_age('Gesamt')*0.05],
            line_width=2, legend_label='{:}% Bevölkerung'.format(5*five_percentile), line_dash=[3, 3])

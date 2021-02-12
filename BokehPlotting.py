@@ -49,7 +49,7 @@ def remove_none(item):
     item[item==None] = 0
     return item
 
-def plot_data(p,age,year_week,data,collect_data=False,incidence=True):
+def plot_data(p,age,year_week,data,collect_data=False,incidence=True,procentual=False):
     data = remove_none(data)
     data, interp = DownloadData.extrapolateLastWeek(year_week, data, collect_data=collect_data)
     p.sizing_mode = "stretch_both"
@@ -65,6 +65,10 @@ def plot_data(p,age,year_week,data,collect_data=False,incidence=True):
             line_color = (0, 0, 0)
             line_width = 2
             time, count = DownloadData.get_total(incidence=incidence)
+            if procentual:
+                time_diff = 7
+                time = time[time_diff:]
+                count = calculate_procentual(count,time_diff)
             source = ColumnDataSource(data=dict(
                 x_list=time,
                 y_list=list(count),
@@ -101,16 +105,20 @@ def plot_data(p,age,year_week,data,collect_data=False,incidence=True):
         sca.glyph.fill_color = None
         sca.glyph.size = 8
         glyph_list.append(sca)
+    procent=""
     if incidence:
         incidence_cases = "Inzidenz"
     else:
         incidence_cases = "Fallzahlen"
+    if procentual:
+        incidence_cases = "Unterschied"
+        procent = "%"
     p.add_tools(HoverTool(
         renderers=glyph_list,
         tooltips=[
             ("Alter", "@desc"),
             ("Datum", "@x_list{%d.%m.%Y}"),
-            ("Inzidenz", "@y_list{0}"),
+            (incidence_cases, "@y_list{0}"+procent),
         ],
         formatters={'@x_list': 'datetime', },
     ))
@@ -183,6 +191,17 @@ def plot_sum(p):
     ))
     return p
 
+def calculate_procentual(data,diff=1):
+    with np.errstate(all='ignore'):
+        if np.ndim(data) == 1:
+            return_value = (data[diff:] - data[:-diff]) / data[diff:] * 100
+        else:
+            return_value = (data[:, diff:] - data[:, :-diff]) / data[:, diff:] * 100
+    #return_value[return_value == None] = 0
+    np.nan_to_num(return_value, copy=False, nan=0, posinf=0, neginf=0)
+    return return_value
+
+
 
 def __init__():
     age, year_week, data, abs_data = DownloadData.incidence(True)
@@ -197,15 +216,21 @@ def __init__():
     p2 = figure(title="Fallzahlen nach Altersgruppen", x_axis_type='datetime', x_axis_label='Datum',
                 y_axis_label='Fallzahl',
                 tools='pan,wheel_zoom,box_zoom,reset')
-    p3 = figure(title="Infektion und Impfung - Kumulativ", x_axis_type='datetime', x_axis_label='Datum',
+    p3 = figure(title="Prozentualer Unterschied zur Vorwoche", x_axis_type='datetime', x_axis_label='Datum',
+                y_axis_label='Unterschied zur Vorwoche in %',
+                tools='pan,wheel_zoom,box_zoom,reset')
+    p4 = figure(title="Infektion und Impfung - Kumulativ", x_axis_type='datetime', x_axis_label='Datum',
                 y_axis_label='Personen',
                 tools='pan,wheel_zoom,box_zoom,reset')
     p1 = plot_data(p1, age, year_week, data, collect_data=True, incidence=True)
     p2 = plot_data(p2, age, year_week, abs_data, incidence=False)
-    p3 = plot_sum(p3)
-    p1.x_range = bokeh.models.Range1d(x_bound[0],x_bound[1])
-    p3.x_range = p2.x_range = p1.x_range
 
+    p3 = plot_data(p3,age,year_week[1:],calculate_procentual(abs_data), incidence=False, procentual=True)
+    p4 = plot_sum(p4)
+    p1.x_range = bokeh.models.Range1d(x_bound[0],x_bound[1])
+    p4.x_range = p3.x_range = p2.x_range = p1.x_range
+
+    p3.y_range = bokeh.models.Range1d(-100, 100)
 
     time, count = DownloadData.get_total(incidence=False)
 
@@ -225,7 +250,8 @@ def __init__():
 
     tab1 = bokeh.models.Panel(child=p1, title="Inzidenz")
     tab2 = bokeh.models.Panel(child=p2, title="Fallzahl")
-    tab3 = bokeh.models.Panel(child=p3, title="Kumulativ")
+    tab3 = bokeh.models.Panel(child=p3, title="Prozentuale Veränderunng")
+    tab4 = bokeh.models.Panel(child=p4, title="Kumulativ")
 
     sub_text = bokeh.models.Div(text='<p style="font-size:10px">Stand: ' + datetime.datetime.now().strftime("%d.%m.%Y %H:%M") +
                                      '; Quellen: <a href="https://survstat.rki.de">Fallzahlen Altersgruppen - Robert Koch-Institut: SurvStat@RKI 2.0</a>; '
@@ -235,7 +261,7 @@ def __init__():
                                      '<a href="https://impfdashboard.de/static/data/germany_vaccinations_timeseries_v2.tsv">Impfdaten - impfdashboard.de</a>;<br>'
                                      '<a href="https://github.com/timkalkus/RKI_Covid_Age">Github-Seite</a> des Tools</p>')
 
-    column = bokeh.layouts.column([bokeh.models.Tabs(tabs=[tab1, tab2, tab3]),date_range_slider, sub_text])
+    column = bokeh.layouts.column([bokeh.models.Tabs(tabs=[tab1, tab2, tab3, tab4]),date_range_slider, sub_text])
     column.sizing_mode = "stretch_both"
     show(column)
 

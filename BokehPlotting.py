@@ -194,9 +194,9 @@ def plot_sum(p):
 def calculate_procentual(data,diff=1):
     with np.errstate(all='ignore'):
         if np.ndim(data) == 1:
-            return_value = (data[diff:] - data[:-diff]) / data[diff:] * 100
+            return_value = (data[diff:] - data[:-diff]) / data[:-diff] * 100
         else:
-            return_value = (data[:, diff:] - data[:, :-diff]) / data[:, diff:] * 100
+            return_value = (data[:, diff:] - data[:, :-diff]) / data[:, :-diff] * 100
     #return_value[return_value == None] = 0
     np.nan_to_num(return_value, copy=False, nan=0, posinf=0, neginf=0)
     return return_value
@@ -225,7 +225,7 @@ def __init__():
     p1 = plot_data(p1, age, year_week, data, collect_data=True, incidence=True)
     p2 = plot_data(p2, age, year_week, abs_data, incidence=False)
 
-    p3 = plot_data(p3,age,year_week[1:],calculate_procentual(abs_data), incidence=False, procentual=True)
+    p3 = plot_data(p3,age,year_week[1:],calculate_procentual(data), incidence=False, procentual=True)
     p4 = plot_sum(p4)
     p1.x_range = bokeh.models.Range1d(x_bound[0],x_bound[1])
     p4.x_range = p3.x_range = p2.x_range = p1.x_range
@@ -250,7 +250,7 @@ def __init__():
 
     tab1 = bokeh.models.Panel(child=p1, title="Inzidenz")
     tab2 = bokeh.models.Panel(child=p2, title="Fallzahl")
-    tab3 = bokeh.models.Panel(child=p3, title="Prozentuale Veränderunng")
+    tab3 = bokeh.models.Panel(child=p3, title="Prozentuale Veränderung")
     tab4 = bokeh.models.Panel(child=p4, title="Kumulativ")
 
     sub_text = bokeh.models.Div(text='<p style="font-size:10px">Stand: ' + datetime.datetime.now().strftime("%d.%m.%Y %H:%M") +

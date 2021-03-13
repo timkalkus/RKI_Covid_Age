@@ -213,7 +213,7 @@ def get_total(incidence=True,smooth=True):
         time_case_dict = dict()
         time_death_dict = dict()
         notFinished = True
-        offset = 0  # 1000000
+        offset = 0 # 0
 
         while notFinished:
             with urllib.request.urlopen(
@@ -223,6 +223,7 @@ def get_total(incidence=True,smooth=True):
                 data = json.loads(url.read().decode())
                 if 'exceededTransferLimit' not in data:
                     notFinished = False
+
                 offset = offset + len(data['features'])
                 print(offset)
                 # if offset > 10000:
